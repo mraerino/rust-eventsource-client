@@ -1,19 +1,22 @@
 /// Error type returned from this library's functions.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// The HTTP request failed.
+    #[error("HTTP request failed: {0}")]
     HttpRequest(Box<dyn std::error::Error + Send + 'static>),
-    /// An error reading from the HTTP response body.
+    #[error("error reading from the HTTP response body: {0}")]
     HttpStream(Box<dyn std::error::Error + Send + 'static>),
-    /// The HTTP response stream ended unexpectedly (e.g. in the
-    /// middle of an event).
+    /// e.g. in the middle of an event.
+    #[error("HTTP response stream ended unexpectedly")]
     UnexpectedEof,
     /// Encountered a line not conforming to the SSE protocol.
+    #[error("Invalid line encountered")]
     InvalidLine(String),
     /// Encountered an event type that is not a valid UTF-8 byte sequence.
+    #[error("Event type is not valid UTF-8")]
     InvalidEventType(std::str::Utf8Error),
     /// An unexpected failure occurred.
-    Unexpected(Box<dyn std::error::Error + Send + 'static>),
+    #[error("Unexpected failure: {0}")]
+    Unexpected(#[from] Box<dyn std::error::Error + Send + 'static>),
 }
 
 impl PartialEq<Error> for Error {
@@ -43,15 +46,6 @@ impl Error {
             Error::Unexpected(err) => Some(err.as_ref()),
             _ => None,
         }
-    }
-}
-
-impl<E> From<E> for Error
-where
-    E: std::error::Error + Send + 'static,
-{
-    fn from(e: E) -> Error {
-        Error::Unexpected(Box::new(e))
     }
 }
 
